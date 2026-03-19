@@ -76,11 +76,11 @@ describe('Toolgroups Tests', () => {
         
         // Test convert_from (Group -> GroupSchema/POJO)
         const g = new Group("test_group", null, null, "Title", null, null, { "key": "value" });
-        const schema = converter.convert_from(g);
+        var s = converter.convert_from(g);
         // In TS, converter.convert_from returns a GroupType (POJO)
-        expect(GroupSchema..name).toBe("test_group");
-        expect(schema.title).toBe("Title");
-        expect(schema._meta).toEqual({ "key": "value" });
+        expect(s as GroupType).name.toBe("test_group");
+        expect(s as GroupType).title.toBe("Title");
+        expect(s as GroupType)._meta.toEqual({ "key": "value" });
         
         // Test convert_to (GroupSchema/dict -> Group)
         // Using dict (as pydantic might)
