@@ -1,7 +1,7 @@
 {
   "name": "toolgroups",
   "version": "0.1.0",
-  "description": "",
+  "description": "Toolgroups Extension for Typescript SDK",
   "main": "index.js",
   "scripts": {
     "test": "vitest run"
@@ -16,5 +16,17 @@
   },
   "devDependencies": {
     "vitest": "^4.0.18"
-  }
+  },
+  "directories": {
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OpenMCPTools/toolgroups_ts.git"
+  },
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/OpenMCPTools/toolgroups_ts/issues"
+  },
+  "homepage": "https://github.com/OpenMCPTools/toolgroups_ts#readme"
 }
