@@ -1,5 +1,5 @@
 import { Icon, ToolAnnotations, Tool as OTool } from '@modelcontextprotocol/sdk/types.js';
-import { EXTENSION_ID, GroupType } from './GroupSchema';
+import { EXTENSION_ID, GroupType } from './GroupSchema.js';
 
 export abstract class AbstractBase {
   static readonly DEFAULT_SEPARATOR = ".";

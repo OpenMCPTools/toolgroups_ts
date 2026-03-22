@@ -24,7 +24,7 @@
     "type": "git",
     "url": "git+https://github.com/OpenMCPTools/toolgroups_ts.git"
   },
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/OpenMCPTools/toolgroups_ts/issues"
   },
