@@ -65,9 +65,8 @@ server.registerTool(
 );
 ```
 ## Running this Example
-```
 To run this example from project directory
-```console
+```text
 npx tsx .\examples\toolgroup_server.ts
 ```
 ## Runing API Unit Tests
