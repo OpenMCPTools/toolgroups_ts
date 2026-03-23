@@ -13,7 +13,7 @@ const server = new ToolgroupMcpServer("myserver", "1.0.0");
 // This example uses the example 'calculate-bmi' tool from the
 // McpServer.registerTool method documentation.  The only difference
 // below is the inclusion of the midgroup Group as a 4th argument.
-server.registerTool(
+const r_tool = server.registerTool(
     // From McpServer.registerTool docs
     'calculate-bmi',
     // From McpServer.registerTool docs
@@ -38,4 +38,4 @@ server.registerTool(
     midgroup
 );
 
-console.log("registered tool with ToolgroupsServer")
+console.log("registered tool with ToolgroupsServer="+JSON.stringify(r_tool));
