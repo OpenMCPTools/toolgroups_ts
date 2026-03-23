@@ -2,23 +2,28 @@
   "name": "toolgroups",
   "version": "0.1.0",
   "description": "Toolgroups Extension for Typescript SDK",
-  "main": "index.js",
+  "main": "tg_server.js",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "tgserver": "node tg_server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",
+    "class-transformer": "^0.5.1",
+    "reflect-metadata": "^0.2.2",
     "typescript": "^5.9.3",
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "tsx": "^4.21.0",
     "vitest": "^4.0.18"
   },
   "directories": {
-    "test": "tests"
+    "test": "tests",
+    "examples": "examples"
   },
   "repository": {
     "type": "git",

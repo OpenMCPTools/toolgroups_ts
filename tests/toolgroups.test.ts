@@ -6,7 +6,7 @@ describe('Toolgroups Tests', () => {
 
     it('test_group_initialization_and_validation', () => {
         // Test valid initialization
-        const g = new Group("root", null, null, "Root Group", "Desc");
+        const g = new Group("root", null, "Root Group", "Desc");
         expect(g.name).toBe("root");
         expect(g.title).toBe("Root Group");
         expect(g.description).toBe("Desc");
@@ -45,7 +45,7 @@ describe('Toolgroups Tests', () => {
 
     it('test_tool_and_group_association', () => {
         const root = new Group("math");
-        const tool = new Tool("add", ".", root, null, "Add numbers");
+        const tool = new Tool("add", root, "Add numbers", null, null, ".");
         
         expect(tool.name).toBe("add");
         expect(tool.fqname).toBe("math.add");
@@ -60,9 +60,9 @@ describe('Toolgroups Tests', () => {
     });
 
     it('test_fqname_custom_separator', () => {
-        const root = new Group("a", null, "/");
-        const child = new Group("b", root, "/");
-        const tool = new Tool("c", "/", child);
+        const root = new Group("a", null, null, null, null, null, "/");
+        const child = new Group("b", root, null, null, null, null, "/");
+        const tool = new Tool("c", child, null, null, null, null, null, null, null, "/");
         
         expect(child.fqname).toBe("a/b");
         expect(tool.fqname).toBe("a/b/c");
@@ -72,7 +72,7 @@ describe('Toolgroups Tests', () => {
         const converter = new ToolGroupConverter();
         
         // Test convert_from (Group -> GroupSchema/POJO)
-        const g = new Group("test_group", null, null, "Title", null, null, { "key": "value" });
+        const g = new Group("test_group", null, "Title", null, null, { "key": "value" });
         var s = converter.convert_from(g);
         // In TS, converter.convert_from returns a GroupType (POJO)
         expect(s.name).toBe("test_group");
@@ -95,7 +95,7 @@ describe('Toolgroups Tests', () => {
         
         // Test convert_from (Internal Tool -> mcpt.Tool)
         const g = new Group("grp");
-        const t = new Tool("mytool", ".", g, null, "desc");
+        const t = new Tool("mytool", g);
         const mcpTool = tc.convert_from(t);
         
         expect(mcpTool.name).toBe("grp.mytool");

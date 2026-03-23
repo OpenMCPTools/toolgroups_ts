@@ -18,23 +18,26 @@ export const GroupSchema: z.ZodType = z.lazy(() =>
 
 export type GroupType = z.infer<typeof GroupSchema>;
 
+class DefaultMetadata {
+	
+}
 export abstract class AbstractBase {
   static readonly DEFAULT_SEPARATOR = ".";
 
-  protected _name: string;
-  protected _name_separator: string = AbstractBase.DEFAULT_SEPARATOR;
+  protected readonly _name: string;
   protected _title: string | null = null;
   protected _description: string | null = null;
   protected _icons: Icon[] | null = null;
   protected _meta: Record<string, any> | null = null;
+  protected _name_separator: string = AbstractBase.DEFAULT_SEPARATOR;
 
   constructor(
       name: string,
-      name_separator: string | null = null,
       title: string | null = null,
       description: string | null = null,
       icons: Icon[] | null = null,
-      meta: Record<string, any> | null = null
+      meta: Record<string, any> | null = null,
+	  name_separator: string = null,
   ) {
       // Validation for name parameter
       if (!name || name.trim().length === 0) {
@@ -117,22 +120,20 @@ export abstract class AbstractBase {
 }
 
 export class Group extends AbstractBase {
-    protected _child_groups: Group[];
-    protected _child_tools: Tool[];
+    protected _child_groups: Group[] = [];
+    protected _child_tools: Tool[] = [];
     protected _parent: Group | null = null;
 
     constructor(
         name: string,
         parent: Group | null = null,
-        name_separator: string | null = null,
         title: string | null = null,
         description: string | null = null,
         icons: Icon[] | null = null,
-        meta: Record<string, any> | null = null
+        meta: Record<string, any> | null = null,
+		name_separator: string | null = null
     ) {
-        super(name, name_separator, title, description, icons, meta);
-        this._child_groups = [];
-        this._child_tools = [];
+        super(name, title, description, icons, meta, name_separator);
         if (parent) {
             parent.add_child_group(this);
         }
@@ -196,24 +197,12 @@ export class Group extends AbstractBase {
     }
 
     public toString(): string {
-        return ` name=${this.name} fqname=${this.fqname} parent=${this.parent} title=${this.title} description=${this.description} meta=${JSON.stringify(this.meta)}`;
+        return `Group(name=${this.name} fqname=${this.fqname} parent=${this.parent} title=${this.title} description=${this.description} meta=${JSON.stringify(this.meta)})`;
     }
 }
 
 export abstract class AbstractLeaf extends AbstractBase {
-    protected _parent_groups: Group[];
-
-    constructor(
-        name: string,
-        name_separator: string | null = null,
-        title: string | null = null,
-        description: string | null = null,
-        icons: Icon[] | null = null,
-        meta: Record<string, any> | null = null
-    ) {
-        super(name, name_separator, title, description, icons, meta);
-        this._parent_groups = [];
-    }
+    protected _parent_groups: Group[] = [];
 
     public add_parent_group(parent_group: Group): boolean {
         return this._add(parent_group, this._parent_groups, null);
@@ -238,27 +227,28 @@ export abstract class AbstractLeaf extends AbstractBase {
 }
 
 export class Tool extends AbstractLeaf {
+	
     protected _annotations: ToolAnnotations | null = null;
     protected _input_schema: Record<string, any> | null = null;
     protected _output_schema: Record<string, any> | null = null;
 
     constructor(
         name: string,
-        name_separator: string = AbstractBase.DEFAULT_SEPARATOR,
         parent: Group | null = null,
         title: string | null = null,
         description: string | null = null,
         icons: Icon[] | null = null,
-        annotations: ToolAnnotations | null = null,
-        input_schema: Record<string, any> = {},
-        output_schema: Record<string, any> | null = null,
-        meta: Record<string, any> | null = null
+        meta: Record<string, any> | null = null,
+		annotations: ToolAnnotations | null = null,
+		input_schema: Record<string, any> = {},
+		output_schema: Record<string, any> | null = null,
+		name_separator: string | null = null
     ) {
-        super(name, name_separator, title, description, icons, meta);
+        super(name, title, description, icons, meta, name_separator);
         this._annotations = annotations;
         this._input_schema = input_schema;
         this._output_schema = output_schema;
-        if (parent) {
+        if (parent !== null) {
             parent.add_child_tool(this);
         }
     }
@@ -292,7 +282,7 @@ export class Tool extends AbstractLeaf {
     }
 
     public toString(): string {
-        return ` name=${this.name} fqname=${this.fqname} title=${this.title} description=${this.description} input_schema=${JSON.stringify(this.input_schema)} output_schema=${JSON.stringify(this.output_schema)} icons=${JSON.stringify(this.icons)} annotations=ToolAnnotations(${JSON.stringify(this.annotations)}) meta=${JSON.stringify(this.meta)} parent_groups=${this.get_parent_groups()}`;
+        return `Tool(name=${this.name} fqname=${this.fqname} title=${this.title} description=${this.description} input_schema=${JSON.stringify(this.input_schema)} output_schema=${JSON.stringify(this.output_schema)} icons=${JSON.stringify(this.icons)} annotations=ToolAnnotations(${JSON.stringify(this.annotations)}) meta=${JSON.stringify(this.meta)} parent_groups=${this.get_parent_groups()})`;
     }
 }
 
@@ -423,15 +413,15 @@ export class ToolConverter {
         /** tuple result: 0=tool_name, 1=parent group, 2=meta */
         const t = new Tool(
             ext[0],
-            AbstractBase.DEFAULT_SEPARATOR,
             ext[1],
-            s.title || null,
-            s.description || null,
-            s.icons || null,
-            s.annotations || null,
-            s.inputSchema || {},
-            s.outputSchema || null,
-            ext[2]
+            s.title,
+            s.description,
+            s.icons,
+			ext[2],
+            s.annotations,
+            s.inputSchema,
+            s.outputSchema,
+			AbstractBase.DEFAULT_SEPARATOR
         );
         /** tuple result 3=list of additional parents */
         if (ext[3]) {
