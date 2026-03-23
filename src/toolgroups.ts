@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { BaseMetadataSchema } from '@modelcontextprotocol/sdk/types.js';
 import { McpServer, StdioServerTransport } from '@modelcontextprotocol/sdk/server/mcp';
 
+// groups support constant.  For multi-language interoperability
+// This must not be changed.
 export const EXTENSION_ID = "org.openmcptools/groups" as const;
 
 /**
@@ -19,9 +21,6 @@ export const GroupSchema: z.ZodType = z.lazy(() =>
 
 export type GroupType = z.infer<typeof GroupSchema>;
 
-class DefaultMetadata {
-
-}
 export abstract class AbstractBase {
     static readonly DEFAULT_SEPARATOR = ".";
 
@@ -34,24 +33,25 @@ export abstract class AbstractBase {
 
     constructor(
         name: string,
-        title: string | null = null,
-        description: string | null = null,
-        icons: Icon[] | null = null,
-        meta: Record<string, any> | null = null,
-        name_separator: string = null,
+        config?: {
+            title?: string,
+            description?: string,
+            icons?: Icon[],
+            meta?: Record<string, any>,
+            name_separator?: string
+        }
     ) {
         // Validation for name parameter
         if (!name || name.trim().length === 0) {
             throw new Error("name must not be null, empty, or blank");
         }
         this._name = name;
-        if (name_separator !== null) {
-            this._name_separator = name_separator;
-        }
-        this._title = title;
-        this._description = description;
-        this._icons = icons;
-        this._meta = meta;
+        const c = config ?? {};
+        this._title = c.title ?? null;
+        this._description = c.description ?? null;
+        this._icons = c.icons ?? null;
+        this._meta = c.meta ?? null;
+        this._name_separator = c.name_separator ?? AbstractBase.DEFAULT_SEPARATOR;
     }
 
     get name_separator(): string {
@@ -127,15 +127,17 @@ export class Group extends AbstractBase {
 
     constructor(
         name: string,
-        parent: Group | null = null,
-        title: string | null = null,
-        description: string | null = null,
-        icons: Icon[] | null = null,
-        meta: Record<string, any> | null = null,
-        name_separator: string | null = null
+        config?: {
+            title?: string,
+            description?: string,
+            icons?: Icon[],
+            meta?: Record<string, any>,
+            name_separator?: string
+        },
+        parent?: Group
     ) {
-        super(name, title, description, icons, meta, name_separator);
-        if (parent) {
+        super(name, config);
+        if (parent !== undefined && parent !== null) {
             parent.add_child_group(this);
         }
     }
@@ -230,26 +232,29 @@ export abstract class AbstractLeaf extends AbstractBase {
 export class Tool extends AbstractLeaf {
 
     protected _annotations: ToolAnnotations | null = null;
-    protected _input_schema: Record<string, any> | null = null;
+    protected _input_schema: Record<string, any> | null = {};
     protected _output_schema: Record<string, any> | null = null;
 
     constructor(
         name: string,
-        parent: Group | null = null,
-        title: string | null = null,
-        description: string | null = null,
-        icons: Icon[] | null = null,
-        meta: Record<string, any> | null = null,
-        annotations: ToolAnnotations | null = null,
-        input_schema: Record<string, any> = {},
-        output_schema: Record<string, any> | null = null,
-        name_separator: string | null = null
+        config?: {
+            title?: string,
+            description?: string,
+            icons?: Icon[],
+            meta?: Record<string, any>,
+            name_separator: string,
+            annotations?: ToolAnnotations,
+            input_schema?: Record<string, any>,
+            output_schema?: Record<string, any>
+        },
+        parent?: Group,
     ) {
-        super(name, title, description, icons, meta, name_separator);
-        this._annotations = annotations;
-        this._input_schema = input_schema;
-        this._output_schema = output_schema;
-        if (parent !== null) {
+        super(name, config);
+        const c = config ?? {};
+        this._annotations = c.annotations ?? null;
+        this._input_schema = c.input_schema ?? {};
+        this._output_schema = c.output_schema ?? null;
+        if (parent !== undefined && parent !== null) {
             parent.add_child_tool(this);
         }
     }
@@ -322,12 +327,12 @@ export class ToolGroupConverter {
         if (!g) {
             g = new Group(
                 name,
+                {
+                    title: title,
+                    description: description,
+                    meta: meta
+                },
                 parent ? this.convert_to(parent) : null,
-                null,
-                title,
-                description,
-                null,
-                meta
             );
             /** place in cache by name */
             this._group_cache.set(name, g);
@@ -338,10 +343,10 @@ export class ToolGroupConverter {
     public convert_from(target: Group): GroupType {
         return {
             name: target.name,
-            parent: target.parent ? this.convert_from(target.parent) : undefined,
-            title: target.title || undefined,
-            description: target.description || undefined,
-            _meta: target.meta || undefined
+            title: target.title,
+            description: target.description,
+            _meta: target.meta,
+            parent: target.parent ? this.convert_from(target.parent) : null
         };
     }
 
@@ -414,14 +419,16 @@ export class ToolConverter {
         /** tuple result: 0=tool_name, 1=parent group, 2=meta */
         const t = new Tool(
             ext[0],
-            ext[1],
-            s.title,
-            s.description,
-            s.icons,
-            ext[2],
-            s.annotations,
-            s.inputSchema,
-            s.outputSchema);
+            {
+                title: s.title,
+                description: s.description,
+                icons: s.icons,
+                meta: ext[2],
+                annotations: s.annotations,
+                input_schema: s.inputSchema,
+                output_schema: s.outputSchema
+            },
+            ext[1]);
         /** tuple result 3=list of additional parents */
         if (ext[3]) {
             for (const g of ext[3]) {
@@ -461,15 +468,13 @@ export class ToolgroupMcpServer extends McpServer {
     private tool_converter: ToolConverter = new ToolConverter();
 
     /**
-     * Registers a tool with a config object and callback.
+     * Registers a tool with a config object, callback, and optional parent Group.
      *
      * @example
      * ```ts source="./mcp.examples.ts#McpServer_registerTool_basic"
      * server.registerTool(
      *     'calculate-bmi',
      *     {
-	 * 		   // a parent group for given tool to be registered or null
-     *         parent: agroup,  
      *         title: 'BMI Calculator',
      *         description: 'Calculate Body Mass Index',
      *         inputSchema: z.object({
@@ -484,14 +489,15 @@ export class ToolgroupMcpServer extends McpServer {
      *             content: [{ type: 'text', text: JSON.stringify(output) }],
      *             structuredContent: output
      *         };
-     *     }
+     *     },
+     * 	   // an optional parent group for the given tool
+     *     mygroup,  
      * );
      * ```
      */
     registerTool<OutputArgs extends AnySchema, InputArgs extends AnySchema | undefined = undefined>(
         name: string,
         config: {
-            parent?: Group,
             title?: string;
             description?: string;
             inputSchema?: InputArgs;
@@ -499,21 +505,25 @@ export class ToolgroupMcpServer extends McpServer {
             annotations?: ToolAnnotations;
             _meta?: Record<string, unknown>;
         },
-        cb: ToolCallback<InputArgs>
+        cb: ToolCallback<InputArgs>,
+        parent?: Group
     ): RegisteredTool {
-		// This converts from Tool to sdk.types.Tool, handling the
-		// use of the meta to hold the groups associated with this 
-		// tool for serialization
-        const otool = this.tool_converter.convert_from(new Tool(
+        // Create instance of Tool with optional parent
+        const tool = new Tool(
             name,
-            config.parent,
-            config.title,
-            config.description,
-            config._meta,
-            config.annotations,
-            config.inputSchema,
-            config.outputSchema));
-		// Call super.registerTool to register
+            {
+                title: config.title,
+                description: config.description,
+                meta: config._meta,
+                annotations: config.annotations,
+                input_schema: config.inputSchema,
+                output_schema: config.outputSchema
+            },
+            parent);
+        // Convert from Tool to sdk.types.Tool, handling the
+        // use of the meta to hold the groups
+        const otool = this.tool_converter.convert_from(tool);
+        // Call super.registerTool to actually register
         return super.registerTool(
             otool.name,
             {

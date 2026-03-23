@@ -6,7 +6,7 @@ describe('Toolgroups Tests', () => {
 
     it('test_group_initialization_and_validation', () => {
         // Test valid initialization
-        const g = new Group("root", null, "Root Group", "Desc");
+        const g = new Group("root", { title: "Root Group", description: "Desc" });
         expect(g.name).toBe("root");
         expect(g.title).toBe("Root Group");
         expect(g.description).toBe("Desc");
@@ -16,7 +16,7 @@ describe('Toolgroups Tests', () => {
         expect(() => {
             new Group("");
         }).toThrow("name must not be null, empty, or blank");
-        
+
         expect(() => {
             new Group("   ");
         }).toThrow("name must not be null, empty, or blank");
@@ -24,18 +24,18 @@ describe('Toolgroups Tests', () => {
 
     it('test_group_hierarchy', () => {
         const root = new Group("root");
-        const child = new Group("child", root);
+        const child = new Group("child", null, root);
         const grandchild = new Group("grandchild");
-        
+
         expect(child.parent).toBe(root);
         expect(root.get_child_groups()).toContain(child);
         expect(child.fqname).toBe("root.child");
-        
+
         child.add_child_group(grandchild);
         expect(grandchild.parent).toBe(child);
         expect(grandchild.fqname).toBe("root.child.grandchild");
         expect(grandchild.get_root()).toBe(root);
-        
+
         // Test removal
         root.remove_child_group(child);
         expect(child.parent).toBeNull();
@@ -45,13 +45,13 @@ describe('Toolgroups Tests', () => {
 
     it('test_tool_and_group_association', () => {
         const root = new Group("math");
-        const tool = new Tool("add", root, "Add numbers", null, null, ".");
-        
+        const tool = new Tool("add", { title: "Add numbers", name_separator: "." }, root);
+
         expect(tool.name).toBe("add");
         expect(tool.fqname).toBe("math.add");
         expect(tool.get_parent_groups()).toContain(root);
         expect(root.get_child_tools()).toContain(tool);
-        
+
         // Test multi-parent
         const otherGroup = new Group("utils");
         tool.add_parent_group(otherGroup);
@@ -60,31 +60,31 @@ describe('Toolgroups Tests', () => {
     });
 
     it('test_fqname_custom_separator', () => {
-        const root = new Group("a", null, null, null, null, null, "/");
-        const child = new Group("b", root, null, null, null, null, "/");
-        const tool = new Tool("c", child, null, null, null, null, null, null, null, "/");
-        
+        const root = new Group("a", { name_separator: "/" });
+        const child = new Group("b", { name_separator: "/" }, root);
+        const tool = new Tool("c", { name_separator: "/" }, child);
+
         expect(child.fqname).toBe("a/b");
         expect(tool.fqname).toBe("a/b/c");
     });
 
     it('test_tool_group_converter', () => {
         const converter = new ToolGroupConverter();
-        
+
         // Test convert_from (Group -> GroupSchema/POJO)
-        const g = new Group("test_group", null, "Title", null, null, { "key": "value" });
+        const g = new Group("test_group", { title: "Title", meta: { "key": "value" } });
         var s = converter.convert_from(g);
         // In TS, converter.convert_from returns a GroupType (POJO)
         expect(s.name).toBe("test_group");
         expect(s.title).toBe("Title");
         expect(s._meta).toEqual({ "key": "value" });
-        
+
         // Test convert_to (GroupSchema/dict -> Group)
         // Using dict (as pydantic might)
         const sourceDict = { "name": "cached_group", "title": "Cached" };
         const gConverted = converter.convert_to(sourceDict);
         expect(gConverted.name).toBe("cached_group");
-        
+
         // Test caching
         const gCached = converter.convert_to({ "name": "cached_group" });
         expect(gConverted).toBe(gCached);
@@ -92,12 +92,12 @@ describe('Toolgroups Tests', () => {
 
     it('test_tool_converter', () => {
         const tc = new ToolConverter();
-        
+
         // Test convert_from (Internal Tool -> mcpt.Tool)
         const g = new Group("grp");
-        const t = new Tool("mytool", g);
+        const t = new Tool("mytool", {}, g);
         const mcpTool = tc.convert_from(t);
-        
+
         expect(mcpTool.name).toBe("grp.mytool");
         expect(mcpTool._meta).toHaveProperty(EXTENSION_ID);
         // The first element in meta[EXTENSION_ID] should represent the parent group
@@ -116,7 +116,7 @@ describe('Toolgroups Tests', () => {
     it('test_abstract_base_properties', () => {
         // Group is a concrete impl of AbstractBase
         class Concrete extends Group {}
-        
+
         const obj = new Concrete("test");
         obj.title = "New Title";
         obj.description = "New Desc";
@@ -124,7 +124,7 @@ describe('Toolgroups Tests', () => {
         obj.icons = icons;
         const meta = { "foo": "bar" };
         obj.meta = meta;
-        
+
         expect(obj.title).toBe("New Title");
         expect(obj.description).toBe("New Desc");
         expect(obj.icons).toEqual(icons);
