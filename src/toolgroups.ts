@@ -1,6 +1,7 @@
 import { Icon, ToolAnnotations, Tool as OTool } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { BaseMetadataSchema } from '@modelcontextprotocol/sdk/types.js';
+import { McpServer, StdioServerTransport } from '@modelcontextprotocol/sdk/server/mcp';
 
 export const EXTENSION_ID = "org.openmcptools/groups" as const;
 
@@ -9,114 +10,114 @@ export const EXTENSION_ID = "org.openmcptools/groups" as const;
  * Uses `z.lazy` for the recursive `parent` reference.
  */
 export const GroupSchema: z.ZodType = z.lazy(() =>
-  BaseMetadataSchema.extend({
-    description: z.string().optional(),
-    parent: GroupSchema.optional(),
-    _meta: z.record(z.string(), z.unknown()).optional(),
-  }),
+    BaseMetadataSchema.extend({
+        description: z.string().optional(),
+        parent: GroupSchema.optional(),
+        _meta: z.record(z.string(), z.unknown()).optional(),
+    }),
 );
 
 export type GroupType = z.infer<typeof GroupSchema>;
 
 class DefaultMetadata {
-	
+
 }
 export abstract class AbstractBase {
-  static readonly DEFAULT_SEPARATOR = ".";
+    static readonly DEFAULT_SEPARATOR = ".";
 
-  protected readonly _name: string;
-  protected _title: string | null = null;
-  protected _description: string | null = null;
-  protected _icons: Icon[] | null = null;
-  protected _meta: Record<string, any> | null = null;
-  protected _name_separator: string = AbstractBase.DEFAULT_SEPARATOR;
+    protected readonly _name: string;
+    protected _title: string | null = null;
+    protected _description: string | null = null;
+    protected _icons: Icon[] | null = null;
+    protected _meta: Record<string, any> | null = null;
+    protected _name_separator: string = AbstractBase.DEFAULT_SEPARATOR;
 
-  constructor(
-      name: string,
-      title: string | null = null,
-      description: string | null = null,
-      icons: Icon[] | null = null,
-      meta: Record<string, any> | null = null,
-	  name_separator: string = null,
-  ) {
-      // Validation for name parameter
-      if (!name || name.trim().length === 0) {
-          throw new Error("name must not be null, empty, or blank");
-      }
-      this._name = name;
-      if (name_separator !== null) {
-          this._name_separator = name_separator;
-      }
-      this._title = title;
-      this._description = description;
-      this._icons = icons;
-      this._meta = meta;
-  }
+    constructor(
+        name: string,
+        title: string | null = null,
+        description: string | null = null,
+        icons: Icon[] | null = null,
+        meta: Record<string, any> | null = null,
+        name_separator: string = null,
+    ) {
+        // Validation for name parameter
+        if (!name || name.trim().length === 0) {
+            throw new Error("name must not be null, empty, or blank");
+        }
+        this._name = name;
+        if (name_separator !== null) {
+            this._name_separator = name_separator;
+        }
+        this._title = title;
+        this._description = description;
+        this._icons = icons;
+        this._meta = meta;
+    }
 
-  get name_separator(): string {
-      return this._name_separator;
-  }
+    get name_separator(): string {
+        return this._name_separator;
+    }
 
-  get name(): string {
-      return this._name;
-  }
+    get name(): string {
+        return this._name;
+    }
 
-  get title(): string | null {
-      return this._title;
-  }
+    get title(): string | null {
+        return this._title;
+    }
 
-  set title(title: string | null) {
-      this._title = title;
-  }
+    set title(title: string | null) {
+        this._title = title;
+    }
 
-  get description(): string | null {
-      return this._description;
-  }
+    get description(): string | null {
+        return this._description;
+    }
 
-  set description(description: string | null) {
-      this._description = description;
-  }
+    set description(description: string | null) {
+        this._description = description;
+    }
 
-  get icons(): Icon[] | null {
-      return this._icons;
-  }
+    get icons(): Icon[] | null {
+        return this._icons;
+    }
 
-  set icons(icons: Icon[] | null) {
-      this._icons = icons;
-  }
+    set icons(icons: Icon[] | null) {
+        this._icons = icons;
+    }
 
-  get meta(): Record<string, any> | null {
-      return this._meta;
-  }
+    get meta(): Record<string, any> | null {
+        return this._meta;
+    }
 
-  set meta(meta: Record<string, any> | null) {
-      this._meta = meta;
-  }
+    set meta(meta: Record<string, any> | null) {
+        this._meta = meta;
+    }
 
-  protected _add<T>(child: T, list: T[], fn: (() => void) | null): boolean {
-      if (!list.includes(child)) {
-          list.push(child);
-          if (fn) {
-              fn();
-          }
-          return true;
-      }
-      return false;
-  }
+    protected _add<T>(child: T, list: T[], fn: (() => void) | null): boolean {
+        if (!list.includes(child)) {
+            list.push(child);
+            if (fn) {
+                fn();
+            }
+            return true;
+        }
+        return false;
+    }
 
-  protected _remove<T>(child: T, list: T[], fn: (() => void) | null): boolean {
-      const index = list.indexOf(child);
-      if (index !== -1) {
-          list.splice(index, 1);
-          if (fn) {
-              fn();
-          }
-          return true;
-      }
-      return false;
-  }
+    protected _remove<T>(child: T, list: T[], fn: (() => void) | null): boolean {
+        const index = list.indexOf(child);
+        if (index !== -1) {
+            list.splice(index, 1);
+            if (fn) {
+                fn();
+            }
+            return true;
+        }
+        return false;
+    }
 
-  public abstract get fqname(): string;
+    public abstract get fqname(): string;
 }
 
 export class Group extends AbstractBase {
@@ -131,7 +132,7 @@ export class Group extends AbstractBase {
         description: string | null = null,
         icons: Icon[] | null = null,
         meta: Record<string, any> | null = null,
-		name_separator: string | null = null
+        name_separator: string | null = null
     ) {
         super(name, title, description, icons, meta, name_separator);
         if (parent) {
@@ -227,7 +228,7 @@ export abstract class AbstractLeaf extends AbstractBase {
 }
 
 export class Tool extends AbstractLeaf {
-	
+
     protected _annotations: ToolAnnotations | null = null;
     protected _input_schema: Record<string, any> | null = null;
     protected _output_schema: Record<string, any> | null = null;
@@ -239,10 +240,10 @@ export class Tool extends AbstractLeaf {
         description: string | null = null,
         icons: Icon[] | null = null,
         meta: Record<string, any> | null = null,
-		annotations: ToolAnnotations | null = null,
-		input_schema: Record<string, any> = {},
-		output_schema: Record<string, any> | null = null,
-		name_separator: string | null = null
+        annotations: ToolAnnotations | null = null,
+        input_schema: Record<string, any> = {},
+        output_schema: Record<string, any> | null = null,
+        name_separator: string | null = null
     ) {
         super(name, title, description, icons, meta, name_separator);
         this._annotations = annotations;
@@ -335,7 +336,7 @@ export class ToolGroupConverter {
     }
 
     public convert_from(target: Group): GroupType {
-        return { 
+        return {
             name: target.name,
             parent: target.parent ? this.convert_from(target.parent) : undefined,
             title: target.title || undefined,
@@ -417,12 +418,10 @@ export class ToolConverter {
             s.title,
             s.description,
             s.icons,
-			ext[2],
+            ext[2],
             s.annotations,
             s.inputSchema,
-            s.outputSchema,
-			AbstractBase.DEFAULT_SEPARATOR
-        );
+            s.outputSchema);
         /** tuple result 3=list of additional parents */
         if (ext[3]) {
             for (const g of ext[3]) {
@@ -436,22 +435,94 @@ export class ToolConverter {
         return tools.map(t => this.convert_to(t));
     }
 
-	public convert_from(t: Tool): OTool {
-	        /** first convert to groupex */
-	        const meta = this._convert_to_groupex(t.get_parent_groups(), t.meta);
-	        /** tuple result: 0=parent, 1=meta */
-	        return {
-	            name: t.fqname,
-	            title: t.title || undefined,
-	            description: t.description || undefined,
-	            icons: t.icons || undefined,
-				inputSchema:  { type: "object"},
-	            annotations: t.annotations || undefined,
-	            _meta: meta || undefined,
-	        };
-	}
+    public convert_from(t: Tool): OTool {
+        /** first convert to groupex */
+        const meta = this._convert_to_groupex(t.get_parent_groups(), t.meta);
+        return {
+            name: t.fqname,
+            title: t.title,
+            description: t.description,
+            icons: t.icons,
+            inputSchema: t.input_schema,
+            outputSchema: t.output_schema,
+            annotations: t.annotations,
+            _meta: meta,
+        };
+    }
 
-	    public convert_from_list(tools: Tool[]): OTool[] {
-	        return tools.map(t => this.convert_from(t));
-	    }
-	}
+    public convert_from_list(tools: Tool[]): OTool[] {
+        return tools.map(t => this.convert_from(t));
+    }
+}
+
+// Toolgroups MCP Server declaration
+export class ToolgroupMcpServer extends McpServer {
+
+    private tool_converter: ToolConverter = new ToolConverter();
+
+    /**
+     * Registers a tool with a config object and callback.
+     *
+     * @example
+     * ```ts source="./mcp.examples.ts#McpServer_registerTool_basic"
+     * server.registerTool(
+     *     'calculate-bmi',
+     *     {
+     *         parent: agroup,  // a parent group for given tool to be registered or null
+     *         title: 'BMI Calculator',
+     *         description: 'Calculate Body Mass Index',
+     *         inputSchema: z.object({
+     *             weightKg: z.number(),
+     *             heightM: z.number()
+     *         }),
+     *         outputSchema: z.object({ bmi: z.number() })
+     *     },
+     *     async ({ weightKg, heightM }) => {
+     *         const output = { bmi: weightKg / (heightM * heightM) };
+     *         return {
+     *             content: [{ type: 'text', text: JSON.stringify(output) }],
+     *             structuredContent: output
+     *         };
+     *     }
+     * );
+     * ```
+     */
+    registerTool<OutputArgs extends AnySchema, InputArgs extends AnySchema | undefined = undefined>(
+        name: string,
+        config: {
+            parent?: Group,
+            title?: string;
+            description?: string;
+            inputSchema?: InputArgs;
+            outputSchema?: OutputArgs;
+            annotations?: ToolAnnotations;
+            _meta?: Record<string, unknown>;
+        },
+        cb: ToolCallback<InputArgs>
+    ): RegisteredTool {
+		// This converts from Tool to sdk.types.Tool, handling the
+		// use of the meta to hold the groups associated with this 
+		// tool for serialization
+        const otool = this.tool_converter.convert_from(new Tool(
+            name,
+            config.parent,
+            config.title,
+            config.description,
+            config._meta,
+            config.annotations,
+            config.inputSchema,
+            config.outputSchema));
+		// Call super.registerTool to register
+        return super.registerTool(
+            otool.name,
+            {
+                title: otool.title,
+                description: otool.description,
+                inputSchema: otool.input_schema,
+                outputSchema: otool.output_schema,
+                annotations: otool.annotations,
+                _meta: otool.meta
+            },
+            cb);
+    }
+}
