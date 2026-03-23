@@ -468,7 +468,8 @@ export class ToolgroupMcpServer extends McpServer {
      * server.registerTool(
      *     'calculate-bmi',
      *     {
-     *         parent: agroup,  // a parent group for given tool to be registered or null
+	 * 		   // a parent group for given tool to be registered or null
+     *         parent: agroup,  
      *         title: 'BMI Calculator',
      *         description: 'Calculate Body Mass Index',
      *         inputSchema: z.object({
